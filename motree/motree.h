@@ -9,12 +9,19 @@ class motree
 {
 public:
   motree(TTree* genp);
-  void print(int j);
+  void printmo(int j);
+  void printda(int j);
+
   int gsize() { return (*fpt).size(); }
   float pt(int j) { return (*fpt)[j]; }
   int pdgId(int j) { return (*fpdgId)[j]; }
 private:
   TTree* fgenp;
+  std::vector<int>* ftr1 = 0;
+  std::vector<int>* ftr2 = 0;
+  std::vector<int>* ftr3 = 0;
+  std::vector<int>* ftr4 = 0;
+
   std::vector<float>* fpt = 0;
   std::vector<float>* fphi = 0;
   std::vector<int>* fpdgId = 0;
@@ -23,6 +30,10 @@ private:
   std::vector<int>* fmo2 = 0;
   std::vector<int>* fmo3 = 0;
   std::vector<int>* fmo4 = 0;
+  std::vector<int>* fda1 = 0;
+  std::vector<int>* fda2 = 0;
+  std::vector<int>* fda3 = 0;
+  std::vector<int>* fda4 = 0;
   std::vector<bool> flastll;
 
   void showmo(int me, int layer, std::vector<bool> lastll);
@@ -40,12 +51,37 @@ motree::motree(TTree* genp) : fgenp(genp)
   fgenp->SetBranchAddress("mo2", &fmo2);
   fgenp->SetBranchAddress("mo3", &fmo3);
   fgenp->SetBranchAddress("mo4", &fmo4);
+  fgenp->SetBranchAddress("da1", &fda1);
+  fgenp->SetBranchAddress("da2", &fda2);
+  fgenp->SetBranchAddress("da3", &fda3);
+  fgenp->SetBranchAddress("da4", &fda4);
 }
 
-void motree::print(int j)
+void motree::printmo(int j)
 {
   flastll.clear();
   flastll.push_back(true);
+
+  ftr1 = fmo1;
+  ftr2 = fmo2;
+  ftr3 = fmo3;
+  ftr4 = fmo4;
+
+  printline(j);
+  showmo(j, 1, flastll); 
+  std::cout<<std::endl;
+}
+
+void motree::printda(int j)
+{
+  flastll.clear();
+  flastll.push_back(true);
+
+  ftr1 = fda1;
+  ftr2 = fda2;
+  ftr3 = fda3;
+  ftr4 = fda4;
+
   printline(j);
   showmo(j, 1, flastll); 
   std::cout<<std::endl;
@@ -67,33 +103,33 @@ void motree::printline(int j)
 
 void motree::showmo(int me, int layer, std::vector<bool> lastll)
 {
-  if((*fmo1)[me] >= 0) 
+  if((*ftr1)[me] >= 0) 
     {
-      int imo1 = (*fmo1)[me];
-      drawline(layer, (*fmo2)[me]<0, lastll);
+      int imo1 = (*ftr1)[me];
+      drawline(layer, (*ftr2)[me]<0, lastll);
       printline(imo1);
-      std::vector<bool> lastmo1(lastll); lastmo1.push_back((*fmo2)[me]<0);
+      std::vector<bool> lastmo1(lastll); lastmo1.push_back((*ftr2)[me]<0);
       showmo(imo1, layer+1, lastmo1);
     }
-  if((*fmo2)[me] >= 0) 
+  if((*ftr2)[me] >= 0) 
     {
-      int imo2 = (*fmo2)[me];
-      drawline(layer, (*fmo3)[me]<0, lastll);
+      int imo2 = (*ftr2)[me];
+      drawline(layer, (*ftr3)[me]<0, lastll);
       printline(imo2);
-      std::vector<bool> lastmo2(lastll); lastmo2.push_back((*fmo3)[me]<0);
+      std::vector<bool> lastmo2(lastll); lastmo2.push_back((*ftr3)[me]<0);
       showmo(imo2, layer+1, lastmo2);
     }
-  if((*fmo3)[me] >= 0) 
+  if((*ftr3)[me] >= 0) 
     {
-      int imo3 = (*fmo3)[me];
-      drawline(layer, (*fmo4)[me]<0, lastll);
+      int imo3 = (*ftr3)[me];
+      drawline(layer, (*ftr4)[me]<0, lastll);
       printline(imo3);
-      std::vector<bool> lastmo3(lastll); lastmo3.push_back((*fmo4)[me]<0);
+      std::vector<bool> lastmo3(lastll); lastmo3.push_back((*ftr4)[me]<0);
       showmo(imo3, layer+1, lastmo3);
     }
-  if((*fmo4)[me] >= 0) 
+  if((*ftr4)[me] >= 0) 
     {
-      int imo4 = (*fmo4)[me];
+      int imo4 = (*ftr4)[me];
       drawline(layer, true, lastll);
       printline(imo4);
       std::vector<bool> lastmo4(lastll); lastmo4.push_back(true);

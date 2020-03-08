@@ -17,7 +17,12 @@ void motree_main(std::string inputname, int ievent=0)
       for(int j=0; j<mt->gsize(); j++)
         {
           if((abs(mt->pdgId(j)) == 421 || abs(mt->pdgId(j)) == 411 || abs(mt->pdgId(j)) == 431 || abs(mt->pdgId(j)) == 4122)) 
-            mt->print(j);
+            mt->printmo(j);
+        }
+      for(int j=0; j<mt->gsize(); j++)
+        {
+          if(abs(mt->pdgId(j)) == 421) 
+            mt->printda(j);
         }
     }
   else
@@ -28,8 +33,10 @@ void motree_main(std::string inputname, int ievent=0)
           std::cout<<"------------------------------"<<std::endl;
           for(int j=0; j<mt->gsize(); j++)
             {
-              if((abs(mt->pdgId(j)) == 421 || abs(mt->pdgId(j)) == 411 || abs(mt->pdgId(j)) == 431 || abs(mt->pdgId(j)) == 4122) && mt->pt(j) > 2)
-                mt->print(j);
+              // if((abs(mt->pdgId(j)) == 421 || abs(mt->pdgId(j)) == 411 || abs(mt->pdgId(j)) == 431 || abs(mt->pdgId(j)) == 4122) && mt->pt(j) > 2)
+              //   mt->printmo(j);
+              if(abs(mt->pdgId(j)) == 421)
+                mt->printda(j);
             }
         }
     }
