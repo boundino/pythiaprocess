@@ -25,6 +25,7 @@ private:
   std::vector<float>* fpt = 0;
   std::vector<float>* fphi = 0;
   std::vector<int>* fpdgId = 0;
+  std::vector<int>* fcollisionId = 0;
   std::vector<int>* fstatus = 0;
   std::vector<int>* fmo1 = 0;
   std::vector<int>* fmo2 = 0;
@@ -46,6 +47,7 @@ motree::motree(TTree* genp) : fgenp(genp)
   fgenp->SetBranchAddress("pt", &fpt);
   fgenp->SetBranchAddress("phi", &fphi);
   fgenp->SetBranchAddress("pdgId", &fpdgId);
+  fgenp->SetBranchAddress("collisionId", &fcollisionId);
   fgenp->SetBranchAddress("status", &fstatus);
   fgenp->SetBranchAddress("mo1", &fmo1);
   fgenp->SetBranchAddress("mo2", &fmo2);
@@ -98,7 +100,7 @@ void motree::drawline(int layer, bool lastornot, std::vector<bool> lastll)
 
 void motree::printline(int j)
 {
-  std::cout<<"\e[32m"<<j<<"\e[0m \e[2m=>\e[0m \e[1m"<<(*fpdgId)[j]<<"\e[0m \e[33m("<<(*fstatus)[j]<<")\e[0m \e[34m.. "<<(*fpt)[j]<<", "<<(*fphi)[j]/M_PI<<"\e[0m"<<std::endl;
+  std::cout<<"\e[32m"<<j<<"\e[0m \e[2m=>\e[0m \e[1m"<<(*fpdgId)[j]<<"\e[0m \e[33m("<<(*fstatus)[j]<<", "<<(*fcollisionId)[j]<<")\e[0m \e[34m.. "<<(*fpt)[j]<<", "<<(*fphi)[j]/M_PI<<"\e[0m"<<std::endl;
 }
 
 void motree::showmo(int me, int layer, std::vector<bool> lastll)

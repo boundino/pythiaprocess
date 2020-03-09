@@ -44,6 +44,6 @@ void motree_main(std::string inputname, int ievent=0)
 
 int main(int argc, char* argv[])
 {
-  if(argc==2) { motree_main("results_numEvent200.root", atoi(argv[1])); return 0; }
+  if(argc==2) { motree_main("results.root", atoi(argv[1])); return 0; }
   return 1;
 }
