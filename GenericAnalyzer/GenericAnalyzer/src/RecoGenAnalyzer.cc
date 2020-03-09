@@ -2,6 +2,7 @@
 // system include files
 #include <memory>
 #include <vector>
+#include <map>
 
 // user include files
 #include "FWCore/Framework/interface/Frameworkfwd.h"
@@ -46,6 +47,9 @@ private:
   virtual void endJob() override ;
 
   // ----------member data ---------------------------
+
+  void push_mothers(const reco::Candidate* itref);
+  void push_daughters(const reco::Candidate* itref);
 
   edm::EDGetTokenT<edm::GenHIEvent> HiMCTag_;
   edm::EDGetTokenT<std::vector<PileupSummaryInfo>> puInfoToken_;
@@ -103,6 +107,9 @@ private:
   std::vector<int> da2_pdgId;
   std::vector<int> da3_pdgId;
   std::vector<int> da4_pdgId;
+
+  edm::Handle<reco::GenParticleCollection> gens;
+  std::map<const reco::Candidate*, int> sel;
 
 };
 
@@ -175,6 +182,8 @@ RecoGenAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
   da3_pdgId.clear();
   da4_pdgId.clear();
 
+  sel.clear();
+
   using namespace edm;
 
   // Run info
@@ -207,13 +216,23 @@ RecoGenAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
       qScale = genInfo->qScale();
     }
 
-  edm::Handle<reco::GenParticleCollection> gens;
   iEvent.getByToken(genLabel_, gens);
   std::map<const reco::Candidate*, int> lut;
   for(std::vector<reco::GenParticle>::const_iterator it_gen = gens->begin(); it_gen != gens->end(); it_gen++)
     {
+      if(abs(it_gen->pdgId()) != 421) continue;
+      const reco::Candidate* it_ref = &*it_gen;
+      push_mothers(it_ref);
+      push_daughters(it_ref);
+    }
+
+  int sel_index = 0;
+  for(std::vector<reco::GenParticle>::const_iterator it_gen = gens->begin(); it_gen != gens->end(); it_gen++)
+    {
       // reco::GenParticle _deRef = (*it_gen);
       const reco::Candidate* it_ref = &*it_gen;
+      if(sel.find(it_ref) == sel.end()) continue;
+
       pdgId.push_back(it_gen->pdgId());
       status.push_back(it_gen->status());
       pt.push_back(it_gen->pt());
@@ -222,7 +241,8 @@ RecoGenAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
       collisionId.push_back(it_gen->collisionId());
       nmo.push_back(it_gen->numberOfMothers());
       nda.push_back(it_gen->numberOfDaughters());
-      lut[it_ref] = int(it_gen - gens->begin());
+      lut[it_ref] = sel_index;
+      // lut[it_ref] = int(it_gen - gens.begin());
       mo1.push_back(-1);
       mo2.push_back(-1);
       mo3.push_back(-1);
@@ -243,10 +263,16 @@ RecoGenAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
       da2_pdgId.push_back(0);
       da3_pdgId.push_back(0);
       da4_pdgId.push_back(0);
+
+      sel_index++;
     }
+
   for(std::vector<reco::GenParticle>::const_iterator it_gen = gens->begin(); it_gen != gens->end(); it_gen++)
     {
-      int ii = int(it_gen - gens->begin());
+      // int ii = int(it_gen - gens->begin());
+      const reco::Candidate* it_ref = &*it_gen;
+      if(sel.find(it_ref) == sel.end()) continue;
+      int ii = lut[it_ref];
 
       int nmo = it_gen->numberOfMothers();
       for(int imo = 0; imo < nmo; imo++)
@@ -264,6 +290,7 @@ RecoGenAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
               else if(mo4_pdgId[ii] == 21) { mo4[ii] = lut[rmo]; mo4_pdgId[ii] = rmo->pdgId(); mo4_status[ii] = rmo->status(); }
             }
         }
+
       int nda = it_gen->numberOfDaughters();
       for(int ida = 0; ida < nda; ida++)
         {
@@ -278,6 +305,30 @@ RecoGenAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
   tgen_->Fill();
   thi_->Fill();
 }
+
+
+void 
+RecoGenAnalyzer::push_mothers(const reco::Candidate* itref)
+{
+  sel[itref] = 1; 
+  int nmo = itref->numberOfMothers();
+  for(int i=0; i<nmo; i++)
+    { 
+      push_mothers(itref->mother(i));
+    }
+}
+
+void 
+RecoGenAnalyzer::push_daughters(const reco::Candidate* itref)
+{
+  sel[itref] = 1; 
+  int nmo = itref->numberOfDaughters();
+  for(int i=0; i<nmo; i++)
+    { 
+      push_daughters(itref->daughter(i));
+    }
+}
+
 
 
 // ------------ method called once each job just before starting event loop  ------------
@@ -332,23 +383,23 @@ RecoGenAnalyzer::beginJob()
   tgen_->Branch("mo2", &mo2);
   tgen_->Branch("mo3", &mo3);
   tgen_->Branch("mo4", &mo4);
-  tgen_->Branch("mo1_pdgId", &mo1_pdgId);
-  tgen_->Branch("mo2_pdgId", &mo2_pdgId);
-  tgen_->Branch("mo3_pdgId", &mo3_pdgId);
-  tgen_->Branch("mo4_pdgId", &mo4_pdgId);
-  tgen_->Branch("mo1_status", &mo1_status);
-  tgen_->Branch("mo2_status", &mo2_status);
-  tgen_->Branch("mo3_status", &mo3_status);
-  tgen_->Branch("mo4_status", &mo4_status);
+  // tgen_->Branch("mo1_pdgId", &mo1_pdgId);
+  // tgen_->Branch("mo2_pdgId", &mo2_pdgId);
+  // tgen_->Branch("mo3_pdgId", &mo3_pdgId);
+  // tgen_->Branch("mo4_pdgId", &mo4_pdgId);
+  // tgen_->Branch("mo1_status", &mo1_status);
+  // tgen_->Branch("mo2_status", &mo2_status);
+  // tgen_->Branch("mo3_status", &mo3_status);
+  // tgen_->Branch("mo4_status", &mo4_status);
   tgen_->Branch("nda", &nda);
   tgen_->Branch("da1", &da1);
   tgen_->Branch("da2", &da2);
   tgen_->Branch("da3", &da3);
   tgen_->Branch("da4", &da4);
-  tgen_->Branch("da1_pdgId", &da1_pdgId);
-  tgen_->Branch("da2_pdgId", &da2_pdgId);
-  tgen_->Branch("da3_pdgId", &da3_pdgId);
-  tgen_->Branch("da4_pdgId", &da4_pdgId);
+  // tgen_->Branch("da1_pdgId", &da1_pdgId);
+  // tgen_->Branch("da2_pdgId", &da2_pdgId);
+  // tgen_->Branch("da3_pdgId", &da3_pdgId);
+  // tgen_->Branch("da4_pdgId", &da4_pdgId);
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
