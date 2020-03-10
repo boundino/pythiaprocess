@@ -53,22 +53,34 @@ private:
   virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&);
 
   const reco::Candidate* ffirst;
-  const reco::GenParticle* ffirst_gen;
   std::vector<bool> flastll;
   void printline(const reco::Candidate* me);
-  void printline(const reco::GenParticle& me);
+  void printline(const reco::GenParticle* me);
   void drawline(int layer, bool lastornot, std::vector<bool> lastll);
-  void printmo(const reco::GenParticle& me);
+  void printmo(const reco::Candidate* me);
   void showmo(const reco::Candidate* me, int layer, std::vector<bool> lastll);
-  void showmo(const reco::GenParticle& me, int layer, std::vector<bool> lastll);
+  void showda(const reco::Candidate* me, int layer, std::vector<bool> lastll);
+
+  std::map<const reco::Candidate*, unsigned int> lut_index;
+  std::map<const reco::Candidate*, int> lut_collisionId;
 
   edm::EDGetTokenT< reco::GenParticleCollection > genLabel_;
+  int pdgId_;
+  int collisionId_;
+  int status_;
+  int motherOrdaughter_;
+  int maxlayer_;
 };
 
 Genmochain::Genmochain(const edm::ParameterSet& iConfig)
 {
-  genLabel_           = consumes< reco::GenParticleCollection >(iConfig.getParameter<edm::InputTag>("GenLabel"));
-  // edm::Service<TFileService> fs;
+  genLabel_ = consumes< reco::GenParticleCollection >(iConfig.getParameter<edm::InputTag>("GenLabel"));
+  pdgId_ = iConfig.getParameter<int>("pdgId");
+  collisionId_ = iConfig.getParameter<int>("collisionId");
+  status_ = iConfig.getParameter<int>("status");
+  maxlayer_ = iConfig.getParameter<int>("maxlayer");
+  motherOrdaughter_ = iConfig.getParameter<int>("motherOrdaughter");
+
   ffirst = 0;
 }
 
@@ -82,20 +94,33 @@ Genmochain::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
   using namespace std;
   using namespace edm;
-	
+
+  lut_index.clear();
+  lut_collisionId.clear();
   edm::Handle<reco::GenParticleCollection> parts;
   iEvent.getByToken(genLabel_, parts);
 
   if(parts->size() <= 0) return;
   ffirst = &((*parts)[0]);
-  ffirst_gen = &((*parts)[0]);
   for(unsigned int i = 0; i < parts->size(); ++i)
     {
       const reco::GenParticle& p = (*parts)[i];
+      const reco::Candidate* ref_p = &p;
+      lut_index[ref_p] = i;
+      lut_collisionId[ref_p] = p.collisionId();
+    }
+  for(unsigned int i = 0; i < parts->size(); ++i)
+    {
+      const reco::GenParticle& p = (*parts)[i];
+      if(p.collisionId() != 0 && collisionId_ == 0) continue;
+      if(p.collisionId() == 0 && collisionId_ > 0) continue;
+      const reco::Candidate* ref_p = &p;
       int pdg = p.pdgId();
+      int status = p.status();
 
-      if(abs(pdg) != 421) continue;
-      printmo(p);
+      if(abs(pdg) != pdgId_) continue;
+      if(status_ > 0 && status != status_) continue;
+      printmo(ref_p);
     }
 
 #ifdef THIS_IS_AN_EVENT_EXAMPLE
@@ -159,13 +184,8 @@ Genmochain::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
 void
 Genmochain::printline(const reco::Candidate* me)
 {
-  std::cout<<"\e[32m"<<int(me-ffirst)<<"\e[0m \e[2m=>\e[0m \e[1m"<<me->pdgId()<<"\e[0m \e[33m("<<me->status()<<")\e[0m \e[34m.. "<<me->pt()<<", "<<me->phi()/M_PI<<"\e[0m"<<std::endl;
-}
-
-void
-Genmochain::printline(const reco::GenParticle& me)
-{
-  std::cout<<"\e[32m"<<int(&me-ffirst_gen)<<"\e[0m \e[2m=>\e[0m \e[1m"<<me.pdgId()<<"\e[0m \e[33m("<<me.status()<<")\e[0m \e[34m.. "<<me.pt()<<", "<<me.phi()/M_PI<<"\e[0m"<<std::endl;
+  // std::cout<<"\e[32m"<<int(me-ffirst)<<"\e[0m \e[2m=>\e[0m \e[1m"<<me->pdgId()<<"\e[0m \e[33m("<<me->status()<<")\e[0m \e[34m.. "<<me->pt()<<", "<<me->phi()/M_PI<<"\e[0m"<<std::endl;
+  std::cout<<"\e[32m"<<lut_index[me]<<"\e[0m \e[2m=>\e[0m \e[1m"<<me->pdgId()<<"\e[0m \e[33m("<<me->status()<<", "<<lut_collisionId[me]<<")\e[0m \e[34m.. "<<me->pt()<<", "<<me->phi()/M_PI<<"\u03C0, "<<me->eta()<<"\e[0m"<<std::endl;
 }
 
 void
@@ -179,30 +199,15 @@ Genmochain::drawline(int layer, bool lastornot, std::vector<bool> lastll)
 }
 
 void
-Genmochain::printmo(const reco::GenParticle& me)
+Genmochain::printmo(const reco::Candidate* me)
 {
   flastll.clear();
   flastll.push_back(true);
 
   printline(me);
-  showmo(me, 1, flastll);
+  if(motherOrdaughter_ == 0) showmo(me, 1, flastll);
+  else if(motherOrdaughter_ == 1) showda(me, 1, flastll);
   std::cout<<std::endl;
-}
-
-void
-Genmochain::showmo(const reco::GenParticle& me, int layer, std::vector<bool> lastll)
-{
-  int nmo = me.numberOfMothers();
-  if(nmo <= 0) return;
-
-  for(int i=0; i<nmo; i++)
-    {
-      const reco::Candidate* imo = me.mother(i);
-      drawline(layer, i==(nmo-1), lastll);
-      printline(imo);
-      std::vector<bool> lastmo(lastll); lastmo.push_back(i==(nmo-1));
-      showmo(imo, layer+1, lastmo);
-    }
 }
 
 void
@@ -210,6 +215,7 @@ Genmochain::showmo(const reco::Candidate* me, int layer, std::vector<bool> lastl
 {
   int nmo = me->numberOfMothers();
   if(nmo <= 0) return;
+  if(maxlayer_ >= 0 && layer > maxlayer_) return;
 
   for(int i=0; i<nmo; i++)
     {
@@ -218,6 +224,23 @@ Genmochain::showmo(const reco::Candidate* me, int layer, std::vector<bool> lastl
       printline(imo);
       std::vector<bool> lastmo(lastll); lastmo.push_back(i==(nmo-1));
       showmo(imo, layer+1, lastmo);
+    }
+}
+
+void
+Genmochain::showda(const reco::Candidate* me, int layer, std::vector<bool> lastll)
+{
+  int nda = me->numberOfDaughters();
+  if(nda <= 0) return;
+  if(maxlayer_ >= 0 && layer > maxlayer_) return;
+
+  for(int i=0; i<nda; i++)
+    {
+      const reco::Candidate* ida = me->daughter(i);
+      drawline(layer, i==(nda-1), lastll);
+      printline(ida);
+      std::vector<bool> lastda(lastll); lastda.push_back(i==(nda-1));
+      showda(ida, layer+1, lastda);
     }
 }
 
