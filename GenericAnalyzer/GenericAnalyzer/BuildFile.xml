@@ -26,7 +26,6 @@
 <use name="RecoVertex/AdaptiveVertexFit"/>
 <use name="RecoVertex/KinematicFitPrimitives"/>
 <use name="RecoVertex/KinematicFit"/>
-<use name="SimTracker/Records"/>
 <use name="SimDataFormats/Vertex"/>
 <use name="SimDataFormats/TrackingAnalysis"/>
 <use name="SimDataFormats/PileupSummaryInfo"/>

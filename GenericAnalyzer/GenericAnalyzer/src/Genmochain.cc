@@ -145,6 +145,7 @@ Genmochain::beginJob()
 void 
 Genmochain::endJob() 
 {
+  std::cout<<"\e[32m"<<"[No.]"<<"\e[0m \e[2m=>\e[0m \e[1m"<<"[pdgId]"<<"\e[0m \e[33m("<<"[status]"<<", "<<"[collision id]"<<")\e[0m \e[34m.. "<<"[pt]"<<", "<<"[phi]"<<", "<<"[eta]"<<"\e[0m"<<std::endl;
 }
 
 // ------------ method called when starting to processes a run  ------------
